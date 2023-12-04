@@ -39,7 +39,7 @@ python3 -m pip install open_spiel
 Additional information about installing OpenSpiel can be found at the links above.
 """
 
-!pip install --upgrade open_spiel
+# !pip install --upgrade open_spiel
 
 """# Simple example of OpenSpiel API: uniform random trajectory on Tic-Tac-Toe
 
