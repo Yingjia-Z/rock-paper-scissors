@@ -260,7 +260,7 @@ Below is a template of a basic RL agent to get you started. You will be implemen
 #     return rl_agent.StepOutput(action=action, probs=probs)
 
 
-class MyAgent(rl_agent.AbstractAgent):
+class MyAgent20876108(rl_agent.AbstractAgent):
 
     def __init__(self, num_actions, name="bot_agent"):
         assert num_actions > 0
@@ -345,7 +345,7 @@ class MyAgent(rl_agent.AbstractAgent):
 
 # Just trying an example out.
 
-my_agent = MyAgent(3, name="kate_agent")
+my_agent = MyAgent20876108(3, name="yingjia_agent")
 print(my_agent._num_actions)
 
 
