@@ -260,97 +260,83 @@ Below is a template of a basic RL agent to get you started. You will be implemen
 #     return rl_agent.StepOutput(action=action, probs=probs)
 
 
-# class MyAgent(rl_agent.AbstractAgent):
-#     """Agent class that learns to play RRPS with pattern recognition.
-
-#     This agent looks for simple patterns in the opponent's play (like repeated sequences)
-#     and tries to predict the next move based on that pattern.
-#     """
-
-#     def __init__(self, num_actions, pattern_length=3, name="my_agent"):
-#         assert num_actions > 0
-#         self._num_actions = num_actions
-#         self._pattern_length = pattern_length
-#         self._opponent_history = []
-
-#     def _find_pattern(self):
-#         # Look for a pattern in the opponent's history
-#         if len(self._opponent_history) < 2 * self._pattern_length:
-#             return None
-
-#         # Check the last few actions for a repeating pattern
-#         pattern = self._opponent_history[-self._pattern_length:]
-#         for start in range(len(self._opponent_history) - 2 * self._pattern_length, -1, -1):
-#             if self._opponent_history[start:start + self._pattern_length] == pattern:
-#                 return self._opponent_history[start + self._pattern_length:start + 2 * self._pattern_length]
-
-#         return None
-
-#     def _counter_action(self, action):
-#         # Simple counter-action based on the rules of Rock-Paper-Scissors
-#         return (action + 1) % self._num_actions
-
-#     def step(self, time_step, is_evaluation=False):
-#         # If it is the end of the episode, don't select an action.
-#         if time_step.last():
-#             return
-
-#         game, state = pyspiel.deserialize_game_and_state(
-#             time_step.observations["serialized_state"])
-#         if len(state.history()) > 0:
-#             self._opponent_history.append(state.history()[-1])
-
-#         pattern = self._find_pattern()
-#         if pattern:
-#             # If a pattern is found, play the counter to the predicted next move
-#             predicted_next_move = pattern[-1]
-#             action = self._counter_action(predicted_next_move)
-#         else:
-#             # If no pattern is found, play randomly
-#             action = np.random.randint(self._num_actions)
-
-#         # Uniform probability distribution
-#         probs = np.ones(self._num_actions) / self._num_actions
-#         return rl_agent.StepOutput(action=action, probs=probs)
-
 class MyAgent(rl_agent.AbstractAgent):
 
-    def __init__(self, num_actions, name="my_agent"):
+    def __init__(self, num_actions, name="bot_agent"):
         assert num_actions > 0
-        self._num_actions = num_actions
+        self._num_actions = num_actions  # 3
         self._opponent_history = []
         self._play_order = {}
 
     def _predict_next_move(self):
-        last_five = "".join(map(str, self._opponent_history[-10:]))
-        self._play_order[last_five] = self._play_order.get(last_five, 0) + 1
+        # take the last ten actions from the opponent's histoty
+        recent_history = "".join(map(str, self._opponent_history[-10:]))
+        
+        # update the count for this sequence in the play order dictionary
+        if recent_history in self._play_order:
+            self._play_order[recent_history] += 1
+        else:
+            self._play_order[recent_history] = 1
 
-        potential_plays = [last_five[1:] + str(next_move) for next_move in range(self._num_actions)]
-        sub_order = {k: self._play_order[k] for k in potential_plays if k in self._play_order}
-        prediction = int(max(sub_order, key=sub_order.get)[-1]) if sub_order else np.random.randint(self._num_actions)
+        # store potential next moves of agent
+        potential_moves = []
+
+        # iterate all possible actions to find potential moves
+        for next_move in range(self._num_actions):
+            # ignore the most previous action
+            # take last nine and the new potential move
+            potential_move = recent_history[1:] + str(next_move)
+            potential_moves.append(potential_move)
+
+        # store observed sequences and their counts
+        observed_sequences = {}
+
+        for move in potential_moves:
+            # check if the potential move has been observed before
+            if move in self._play_order:
+                # add to observed_sequences
+                observed_sequences[move] = self._play_order[move]
+
+        # check if any sequences have been observed
+        if observed_sequences:
+            most_common_sequence = max(observed_sequences, key=observed_sequences.get)
+            # the prediction is the last action in the most common sequence
+            prediction = int(most_common_sequence[-1])
+        else:
+            # if there are no observed sequences, play randomly
+            prediction = np.random.randint(self._num_actions)
+        
         return prediction
 
+
     def _counter_action(self, action):
-        # Simple counter-action based on the rules of Rock-Paper-Scissors
-        return (action + 1) % self._num_actions
+        # based on the rules of Rock-Paper-Scissors
+        if action == 0:
+            return 1
+        elif action == 1:
+            return 2
+        elif action == 2:
+            return 0
 
     def step(self, time_step, is_evaluation=False):
         # If it is the end of the episode, don't select an action.
         if time_step.last():
             return
+        # Note: If the environment was created with include_full_state=True, then
+        # game and state can be obtained as follows:
 
-        # Deserialize the state from the OpenSpiel environment.
         game, state = pyspiel.deserialize_game_and_state(time_step.observations["serialized_state"])
+
         if len(state.history()) > 0:
             self._opponent_history.append(state.history()[-1])
 
+        # if not enough data collected, play randomly
         if len(self._opponent_history) < 10:
             action = np.random.randint(self._num_actions)
         else:
-            predicted_next_move = self._predict_next_move()
-            action = self._counter_action(predicted_next_move)
+            prediction = self._predict_next_move()
+            action = self._counter_action(prediction)
 
-        # Uniform probability distribution for the chosen action.
         probs = np.ones(self._num_actions) / self._num_actions
         return rl_agent.StepOutput(action=action, probs=probs)
 
@@ -363,20 +349,20 @@ my_agent = MyAgent(3, name="kate_agent")
 print(my_agent._num_actions)
 
 
-p1_pop_id = 17   # adddriftbot2
-agents = [
-    my_agent,
-    create_roshambo_bot_agent(1, num_actions, roshambo_bot_names, p1_pop_id)
-]
+# p1_pop_id = 14   # adddriftbot2
+# agents = [
+#     my_agent,
+#     create_roshambo_bot_agent(1, num_actions, roshambo_bot_names, p1_pop_id)
+# ]
 
 
-print("Starting eval run.")
-avg_eval_returns = eval_agents(env, agents, num_players, 50, verbose=True)
+# print("Starting eval run.")
+# avg_eval_returns = eval_agents(env, agents, num_players, 50, verbose=True)
 
-print("Avg return ", avg_eval_returns)
+# print("Avg return ", avg_eval_returns)
 
 
-def run_evaluations(env, my_agent, num_actions, roshambo_bot_names, num_players, num_evals):
+def run_evaluations(num_evals):
     for p1_pop_id in range(43):
         agents = [
             my_agent,
@@ -384,10 +370,8 @@ def run_evaluations(env, my_agent, num_actions, roshambo_bot_names, num_players,
                 1, num_actions, roshambo_bot_names, p1_pop_id)
         ]
 
-        # print(f"Starting eval run for p1_pop_id = {p1_pop_id}.")
         avg_eval_returns = eval_agents(
             env, agents, num_players, num_evals, verbose=False)
         print(f"Avg return for p1_pop_id {p1_pop_id}: ", avg_eval_returns)
 
-# Usage
-# run_evaluations(env, my_agent, num_actions, roshambo_bot_names, num_players, 10)
+run_evaluations(7)
