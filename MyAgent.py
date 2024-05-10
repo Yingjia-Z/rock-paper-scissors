@@ -147,7 +147,7 @@ agents = [
 # print("Avg return ", avg_eval_returns)
 
 
-class RLAgent(rl_agent.AbstractAgent):
+class MyAgent(rl_agent.AbstractAgent):
 
     def __init__(self, num_actions, name="bot_agent"):
         assert num_actions > 0
@@ -229,7 +229,7 @@ class RLAgent(rl_agent.AbstractAgent):
         return rl_agent.StepOutput(action=action, probs=probs)
 
 
-my_agent = RLAgent(3, name="yingjia_agent")
+my_agent = MyAgent(3, name="yingjia_agent")
 print(my_agent._num_actions)
 
 
