@@ -4,7 +4,7 @@ This project implements an adaptive agent that plays Rock-Paper-Scissors against
 
 Developed with the OpenSpiel framework to support advanced reinforcement learning and game planning, this agent excels in pattern recognition by maintaining a record of the opponent’s last ten actions. 
 
-This capability enables it to detect patterns and predict future moves, targeting a **93% win rate**. See the the [Strategy](Strategy%20of%20MyAgent.pdf) file for a detailed discussion on the agent's strategies.
+This capability enables it to detect patterns and predict future moves, achieving a **93% win rate**. See the [Strategy](Strategy%20of%20MyAgent.pdf) file for a detailed discussion on the agent's strategies.
 
 
 ## Installation
